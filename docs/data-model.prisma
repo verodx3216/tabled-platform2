@@ -1,0 +1,267 @@
+// =============================================================
+// Tabled — full platform data model
+// =============================================================
+// This schema is intentionally designed for the WHOLE product
+// (Phases 0–3), even though Phase 0 only uses WaitlistEntry and
+// Event/EventBooking. A developer taking over should NOT need to
+// redesign the data layer — only build features on top of it.
+//
+// Phase map (see docs/ROADMAP.md):
+//   Phase 0  — Waitlist + curated dinners  → WaitlistEntry, Event, EventBooking
+//   Phase 1  — Memberships + wallet        → User, Membership, Wallet, LedgerEntry, Venue
+//   Phase 2  — Invitations + reservations  → Invitation, Reservation, Stake
+//   Phase 3  — Couples Mode                → Couple
+//
+// DEV database: SQLite (zero-setup). PRODUCTION: switch provider
+// to "postgresql" and set DATABASE_URL — the schema is written to
+// be portable (no SQLite-specific types).
+// =============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite" // TODO(handover): switch to "postgresql" for production
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Phase 0: acquisition ----------
+
+model WaitlistEntry {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  city      String? // "dubai" | "miami" | "nyc" | other
+  gender    String?
+  interest  String? // "member" | "host" | "venue-partner"
+  source    String? // utm / referral tag
+  createdAt DateTime @default(now())
+}
+
+// A curated dinner (Phase 0 events are seeded from src/content/site.ts;
+// Phase 1 moves them into this table with real booking + payment).
+model Event {
+  id          String         @id @default(cuid())
+  title       String
+  city        String
+  venueName   String
+  startsAt    DateTime
+  capacity    Int            @default(6)
+  priceUsd    Int // ticket price in cents
+  status      String         @default("draft") // draft | published | full | completed | cancelled
+  description String?
+  bookings    EventBooking[]
+  venue       Venue?         @relation(fields: [venueId], references: [id])
+  venueId     String?
+}
+
+model EventBooking {
+  id              String   @id @default(cuid())
+  event           Event    @relation(fields: [eventId], references: [id])
+  eventId         String
+  user            User?    @relation(fields: [userId], references: [id])
+  userId          String?
+  guestEmail      String // allows pre-membership bookings
+  status          String   @default("pending") // pending | paid | attended | no_show | refunded
+  stripePaymentId String? // TODO(handover): set by Stripe webhook (docs/INTEGRATIONS.md #1)
+  createdAt       DateTime @default(now())
+}
+
+// ---------- Phase 1: identity, membership, wallet ----------
+
+model User {
+  id                String         @id @default(cuid())
+  email             String         @unique
+  phone             String?        @unique
+  name              String?
+  role              String         @default("member") // member | admin | venue_manager
+  tier              String         @default("guest") // guest | member | select | couple
+  verificationState String         @default("unverified") // unverified | pending | verified | rejected
+  verificationRef   String? // Persona/UAE Pass inquiry id — TODO(handover): INTEGRATIONS.md #2
+  city              String?
+  createdAt         DateTime       @default(now())
+  membership        Membership?
+  wallet            Wallet?
+  bookings          EventBooking[]
+  sentInvitations   Invitation[]   @relation("sentInvitations")
+  recvInvitations   Invitation[]   @relation("receivedInvitations")
+  stakes            Stake[]
+  coupleA           Couple[]       @relation("partnerA")
+  coupleB           Couple[]       @relation("partnerB")
+}
+
+model Membership {
+  id              String    @id @default(cuid())
+  user            User      @relation(fields: [userId], references: [id])
+  userId          String    @unique
+  plan            String // member_79 | select_199  (couples have NO subscription — see Couple model: wallet-spread economics)
+  status          String    @default("active") // active | past_due | cancelled
+  stripeSubId     String? // TODO(handover): Stripe Billing subscription id
+  currentPeriodEnd DateTime?
+  createdAt       DateTime  @default(now())
+}
+
+// One wallet per user (merged view for couples is computed, not stored).
+// INVARIANT: wallet.balance is ALWAYS derivable as SUM(LedgerEntry.amount)
+// for that wallet. Never mutate balance without an accompanying ledger row.
+// The ledger is append-only: corrections are new entries, never edits.
+model Wallet {
+  id       String        @id @default(cuid())
+  user     User          @relation(fields: [userId], references: [id])
+  userId   String        @unique
+  balance  Int           @default(0) // Date Credits, in cents USD-equivalent
+  currency String        @default("USD")
+  entries  LedgerEntry[]
+}
+
+model LedgerEntry {
+  id            String   @id @default(cuid())
+  wallet        Wallet   @relation(fields: [walletId], references: [id])
+  walletId      String
+  amount        Int // positive = credit, negative = debit (cents)
+  kind          String // monthly_allocation | top_up (100% conversion, no club fee; AML cap for unverified) | redemption | stake_lock | stake_release | no_show_fee (breacher -> PLATFORM: cancellation fee, like an airline no-show charge) | goodwill_credit (PLATFORM -> stood-up member: venue-restricted credits, granted under platform policy) | couples_bonus (15%+ bonus credits on couples top-ups; partner-locked redemption) | referral_bonus | breakage_expiry | adjustment
+  reference     String? // reservationId / stakeId / stripe invoice id
+  memo          String?
+  createdAt     DateTime @default(now())
+
+  @@index([walletId, createdAt])
+}
+
+// ---------- Venue network ----------
+
+// "Book evenings, not tables" model - NO fixed allocations.
+// Each venue publishes standing AvailabilityRules ("accept 2-tops
+// Sun-Wed any time; Thu after 21:45; blackout Dec 20-31") which cost
+// the venue nothing: they only commit capacity they rarely sell.
+// Hosts propose a SHORTLIST of venues (or a vibe); the platform
+// confirms whichever shortlisted venue's rules accept the time once
+// the guest says yes, and reveals the venue ~48h before the date.
+// The availability guarantee is portfolio-level (30 venues), never
+// per-table. VenueSlot rows are DERIVED bookings created at confirm
+// time - not pre-held inventory. Peak requests outside rules go
+// through an async venue-confirm flow with shortlist fallback.
+model AvailabilityRule {
+  id        String  @id @default(cuid())
+  venue     Venue   @relation(fields: [venueId], references: [id])
+  venueId   String
+  daysOfWeek String // e.g. "SUN,MON,TUE,WED"
+  startTime String // "19:00"
+  endTime   String // "22:30"
+  maxCoversPerNight Int @default(2)
+  creditMultiplier  Float @default(1.0) // >1 = off-peak bonus value for members
+  blackoutFrom DateTime?
+  blackoutTo   DateTime?
+  active    Boolean @default(true)
+}
+
+model VenueSlot {
+  id            String       @id @default(cuid())
+  venue         Venue        @relation(fields: [venueId], references: [id])
+  venueId       String
+  startsAt      DateTime
+  partySize     Int          @default(2)
+  status        String       @default("open") // open | held | booked | released_back_to_venue
+  reservation   Reservation? @relation(fields: [reservationId], references: [id])
+  reservationId String?      @unique
+
+  @@index([venueId, startsAt, status])
+}
+
+model Venue {
+  id            String        @id @default(cuid())
+  name          String
+  city          String
+  neighborhood  String?
+  cuisine       String?
+  // Commercial terms: platform pays venue (100 - discountPct)% of face value on redemption.
+  discountPct   Int           @default(25)
+  contactEmail  String?
+  status        String        @default("prospect") // prospect | active | paused
+  events        Event[]
+  reservations  Reservation[]
+  slots         VenueSlot[]
+  rules         AvailabilityRule[]
+}
+
+// ---------- Phase 2: invitations, reservations, stakes ----------
+
+model Invitation {
+  id           String       @id @default(cuid())
+  host         User         @relation("sentInvitations", fields: [hostId], references: [id])
+  hostId       String
+  guest        User         @relation("receivedInvitations", fields: [guestId], references: [id])
+  guestId      String
+  venueName    String // denormalized for display; Reservation holds the real link
+  proposedAt   DateTime // proposed date/time of the date
+  budgetCredits Int // credits the host commits
+  message      String?
+  status       String       @default("sent") // sent | accepted | declined | expired | withdrawn
+  createdAt    DateTime     @default(now())
+  reservation  Reservation?
+}
+
+// A confirmed, platform-booked table. This is the verification anchor:
+// check-in + POS settlement happen against this record.
+model Reservation {
+  id            String      @id @default(cuid())
+  invitation    Invitation? @relation(fields: [invitationId], references: [id])
+  invitationId  String?     @unique
+  venue         Venue       @relation(fields: [venueId], references: [id])
+  venueId       String
+  bookingCode   String      @unique
+  startsAt      DateTime
+  graceMinutes  Int         @default(25)
+  status        String      @default("booked") // booked | checked_in_partial | completed | no_show | cancelled_early | cancelled_late | under_review
+  hostCheckinAt  DateTime?
+  guestCheckinAt DateTime?
+  settledCredits Int? // credits redeemed on the venue POS — objective proof of completion
+  slot          VenueSlot?
+  stakes        Stake[]
+  createdAt     DateTime    @default(now())
+}
+
+model Stake {
+  id            String      @id @default(cuid())
+  reservation   Reservation @relation(fields: [reservationId], references: [id])
+  reservationId String
+  user          User        @relation(fields: [userId], references: [id])
+  userId        String
+  amount        Int // credits locked (cents)
+  // COMPLIANCE-CRITICAL: a forfeited stake is NEVER a user-to-user transfer.
+  // It resolves as TWO independent transactions: (1) no_show_fee, breacher pays
+  // the platform a fixed cancellation fee (liquidated damages for a broken
+  // booking); (2) goodwill_credit, the platform grants the attending member
+  // venue-restricted credits under its own policy. Amounts are PLATFORM-FIXED
+  // (never user-negotiated) and symbolic (~$20/side). Guests without wallets
+  // stake via card authorization hold, released on check-in.
+  outcome       String      @default("locked") // locked | released | resolved_no_show
+  resolvedAt    DateTime?
+}
+
+// ---------- Phase 3: couples wallet ----------
+// SUCCESS = REVENUE. Couples pay no subscription. They top up a shared
+// wallet and receive bonus credits (bonusRatePct, starts 15%, escalates
+// with anniversaries: 15/18/20). Platform pays venues 75% of redeemed
+// face value, so the spread (~10% of cash in) is perpetual, CAC-free
+// revenue. Guardrails:
+//  - Bonus credits redeem ONLY on reservations where BOTH partners
+//    check in (reuses the co-presence verification infra).
+//  - One active partner; 90-day cooldown before re-linking.
+//  - Monthly cap on bonus-eligible top-ups (platform config, e.g. $1,000).
+//  - Couples mode requires a Tabled dating history or verified
+//    relationship onboarding (blocks two friends farming discounts).
+//  - Linking auto-closes both members to new invitations.
+
+model Couple {
+  id        String   @id @default(cuid())
+  partnerA  User     @relation("partnerA", fields: [partnerAId], references: [id])
+  partnerAId String
+  partnerB  User     @relation("partnerB", fields: [partnerBId], references: [id])
+  partnerBId String
+  status    String   @default("active") // active | milestone_reached | ended
+  bonusRatePct Int   @default(15) // escalates at anniversaries: 15 / 18 / 20
+  linkedAt   DateTime @default(now())
+  unlinkedAt DateTime? // 90-day re-link cooldown enforced from this timestamp
+  createdAt DateTime @default(now())
+}
