@@ -115,7 +115,7 @@ const g = globalThis as unknown as { __waitlistStore?: WaitlistStore };
 
 export function waitlistStore(): WaitlistStore {
   if (!g.__waitlistStore) {
-    const url = process.env.DATABASE_URL ?? "file:./dev.db";
+    const url = process.env.DATABASE_URL ?? process.env.POSTGRES_URL ?? "file:./dev.db";
     g.__waitlistStore = url.startsWith("postgres") ? postgresStore(url) : sqliteStore(url);
   }
   return g.__waitlistStore;
