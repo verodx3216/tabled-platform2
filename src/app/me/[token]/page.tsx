@@ -2,6 +2,7 @@ import Link from "next/link";
 import { clubStore } from "@/lib/club";
 import { LogoLockup } from "@/components/Logo";
 import PickButton from "@/components/PickButton";
+import TableBooking from "@/components/TableBooking";
 
 export const dynamic = "force-dynamic";
 
@@ -93,6 +94,9 @@ export default async function MemberPage({ params }: { params: { token: string }
                       </p>
                     )}
                     <PickButton token={params.token} candidateEmail={c.candidateEmail} picked={c.picked} mutual={c.mutual} />
+                    {c.mutual && (
+                      <TableBooking token={params.token} candidateEmail={c.candidateEmail} candidateName={c.name} />
+                    )}
                   </div>
                 </div>
               ))}

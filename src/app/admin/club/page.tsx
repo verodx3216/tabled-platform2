@@ -1,5 +1,7 @@
 import { clubStore } from "@/lib/club";
+import { venueStore } from "@/lib/venues";
 import AssignForm from "@/components/AssignForm";
+import VenueForm from "@/components/VenueForm";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +17,8 @@ export default async function AdminClub({ searchParams }: { searchParams: { toke
   const profiles = await store.listProfiles();
   const picks = await store.listPicks();
   const mutuals = await store.listMutuals();
+  const venues = await venueStore().listVenues();
+  const bookings = await venueStore().listBookings();
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-12">
@@ -28,6 +32,30 @@ export default async function AdminClub({ searchParams }: { searchParams: { toke
           </li>
         ))}
         {mutuals.length === 0 && <li className="text-ink/50">None yet.</li>}
+      </ul>
+
+      <h2 className="mt-8 font-serif text-xl font-bold text-berryDark">Bookings ({bookings.length})</h2>
+      <ul className="mt-2 space-y-1 text-sm">
+        {bookings.map((b) => (
+          <li key={b.id || b.code + b.date} className="rounded-xl bg-cream px-4 py-2">
+            <b className="font-mono">{b.code}</b> · {b.venueName} · {b.date} {b.time} — {b.memberA} + {b.memberB}
+            <span className="ml-2 text-xs text-ink/50">{b.status}</span>
+          </li>
+        ))}
+        {bookings.length === 0 && <li className="text-ink/50">None yet.</li>}
+      </ul>
+
+      <h2 className="mt-8 font-serif text-xl font-bold text-berryDark">Partner venues ({venues.length})</h2>
+      <VenueForm token={searchParams.token!} />
+      <ul className="mt-3 space-y-1 text-sm">
+        {venues.map((v) => (
+          <li key={v.id} className="rounded-xl bg-creamLight px-4 py-2">
+            <b>{v.name}</b> · {v.city}{v.neighborhood ? ` (${v.neighborhood})` : ""} — {v.days} at {v.times},{" "}
+            {v.tablesPerSlot} table(s)/seating, {v.leadHours}h lead
+            {v.contact && <span className="ml-2 text-xs text-ink/50">{v.contact}</span>}
+          </li>
+        ))}
+        {venues.length === 0 && <li className="text-ink/50">No partner venues yet — add your first above.</li>}
       </ul>
 
       <h2 className="mt-8 font-serif text-xl font-bold text-berryDark">Assign introductions</h2>
