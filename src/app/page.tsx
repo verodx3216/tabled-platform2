@@ -221,6 +221,10 @@ export default function Home() {
           <p>
             Date Credits are prepaid venue value, redeemable only at partner venues. Funds are never
             transferable between members. © {new Date().getFullYear()} Tabled ·{" "}
+            <Link href="/creators" className="font-semibold text-berry hover:underline">
+              Creators
+            </Link>{" "}
+            ·{" "}
             <a href="mailto:hello@tabled.club" className="font-semibold text-berry hover:underline">
               hello@tabled.club
             </a>

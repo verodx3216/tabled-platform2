@@ -8,7 +8,8 @@ const schema = z.object({
   email: z.string().email(),
   name: z.string().max(120).optional(),
   city: z.string().max(60).optional(),
-  interest: z.enum(["member", "host", "venue-partner"]).optional(),
+  interest: z.enum(["member", "host", "venue-partner", "creator"]).optional(),
+  handle: z.string().max(60).optional(), // Instagram/TikTok handle (creator applications)
   source: z.string().max(120).optional(),
   ref: z.string().max(20).optional(), // referral code of the member who shared their link
 });
@@ -26,14 +27,15 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ ok: false, error: "Please enter a valid email." }, { status: 400 });
   }
-  const { email, name, city, interest, source, ref } = parsed.data;
+  const { email, name, city, interest, source, ref, handle } = parsed.data;
   try {
     const result = await waitlistStore().upsert({
       email: email.toLowerCase(),
       name: name ?? null,
       city: city ?? null,
       interest: interest ?? null,
-      source: source ?? null,
+      // creator applications carry their IG/TikTok handle inside source
+      source: handle ? `${source ?? "creators-page"} @${handle.replace(/^@/, "")}` : (source ?? null),
       referredBy: ref ?? null,
     });
     return NextResponse.json({ ok: true, ...result });

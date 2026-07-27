@@ -14,7 +14,6 @@ export default function WaitlistForm({ compact = false }: { compact?: boolean })
   const [interest, setInterest] = useState<"member" | "host" | "venue-partner">("member");
   const [state, setState] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [message, setMessage] = useState("");
-  const [position, setPosition] = useState<number | null>(null);
   const [refCode, setRefCode] = useState("");
   const [copied, setCopied] = useState(false);
   const [urlRef, setUrlRef] = useState<string | undefined>(undefined);
@@ -37,7 +36,6 @@ export default function WaitlistForm({ compact = false }: { compact?: boolean })
       });
       const data = await res.json();
       if (data.ok) {
-        setPosition(data.position ?? null);
         setRefCode(data.refCode ?? "");
         setState("done");
       } else {
@@ -58,11 +56,14 @@ export default function WaitlistForm({ compact = false }: { compact?: boolean })
     return (
       <div className="rounded-2xl bg-cream px-6 py-5 text-berryDark">
         <p className="font-serif text-lg font-bold">
-          You&apos;re on the list{position ? ` — #${position.toLocaleString()} in line` : ""}.
+          Your founding application is open.
         </p>
         <p className="mt-1 text-sm text-ink/80">
-          The first 500 founding seats are offered in order of impact: members who bring great
-          people move up. Share your personal link —
+          Founding seats aren&apos;t first-come, first-served — they&apos;re chosen. Boost your
+          application: post your invite to your Story and tag{" "}
+          <span className="font-semibold">@tabled.club</span> — verified founders earn an extra{" "}
+          <span className="font-semibold">$25 in Date Credits</span> at launch. Bringing great
+          people counts too — share your personal link below.
         </p>
         <a href="/apply" className="mt-3 block rounded-full bg-berry px-5 py-3 text-center font-semibold text-white hover:bg-berryDark">
           Complete your founding application &rarr;
