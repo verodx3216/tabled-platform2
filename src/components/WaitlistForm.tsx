@@ -67,29 +67,7 @@ export default function WaitlistForm({ compact = false }: { compact?: boolean })
         <a href="/apply" className="mt-3 block rounded-full bg-berry px-5 py-3 text-center font-semibold text-white hover:bg-berryDark">
           Complete your founding application &rarr;
         </a>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <code className="rounded-full bg-white px-4 py-2 text-sm text-berryDark">{shareUrl}</code>
-          <a
-            href={`https://wa.me/?text=${shareText}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-full bg-[#25D366] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
-          >
-            Share on WhatsApp
-          </a>
-          <button
-            type="button"
-            onClick={() => {
-              navigator.clipboard?.writeText(shareUrl).then(() => {
-                setCopied(true);
-                setTimeout(() => setCopied(false), 2000);
-              });
-            }}
-            className="rounded-full bg-berryDark px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
-          >
-            {copied ? "Copied!" : "Copy link"}
-          </button>
-        </div>
+        <ShareKit shareUrl={shareUrl} copied={copied} setCopied={setCopied} />
       </div>
     );
   }
@@ -144,5 +122,59 @@ export default function WaitlistForm({ compact = false }: { compact?: boolean })
       )}
       {state === "error" && <p className="text-sm text-red-700">{message}</p>}
     </form>
+  );
+}
+
+
+/** Multi-platform share kit. WhatsApp/Telegram/iMessage support pre-filled
+ *  messages via URL; Instagram & Snapchat don't allow web prefill, so those
+ *  buttons copy the message then open the app. The Share button uses the
+ *  native share sheet (all apps appear there on mobile). */
+function ShareKit({ shareUrl, copied, setCopied }:
+  { shareUrl: string; copied: boolean; setCopied: (b: boolean) => void }) {
+  const msg = `Real first dates at great tables — zero swiping. 500 founding seats. Join the line with my link: ${shareUrl}`;
+  const enc = encodeURIComponent(msg);
+  const isIOS = typeof navigator !== "undefined" && /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const smsHref = isIOS ? `sms:&body=${enc}` : `sms:?body=${enc}`;
+  const canNative = typeof navigator !== "undefined" && !!navigator.share;
+
+  function copyMsg(thenOpen?: string) {
+    navigator.clipboard?.writeText(msg).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+      if (thenOpen) window.location.href = thenOpen;
+    });
+  }
+
+  const pill = "rounded-full px-4 py-2 text-sm font-semibold text-white hover:opacity-90";
+  return (
+    <div className="mt-3">
+      {canNative && (
+        <button type="button"
+          onClick={() => navigator.share({ title: "Tabled", text: msg, url: shareUrl }).catch(() => {})}
+          className="mb-2 w-full rounded-full bg-berryDark py-3 font-semibold text-white hover:opacity-90">
+          Share with friends
+        </button>
+      )}
+      <div className="flex flex-wrap items-center gap-2">
+        <a className={pill + " bg-[#25D366]"} target="_blank" rel="noopener noreferrer"
+          href={`https://wa.me/?text=${enc}`}>WhatsApp</a>
+        <a className={pill + " bg-[#229ED9]"} target="_blank" rel="noopener noreferrer"
+          href={`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent("Real first dates at great tables — zero swiping. 500 founding seats.")}`}>Telegram</a>
+        <a className={pill + " bg-[#34C759]"} href={smsHref}>iMessage</a>
+        <button type="button" className={pill + " bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF]"}
+          onClick={() => copyMsg("https://www.instagram.com/")}>Instagram</button>
+        <button type="button" className={pill + " bg-[#FFFC00] !text-black"}
+          onClick={() => copyMsg("https://www.snapchat.com/")}>Snapchat</button>
+        <button type="button" className={pill + " bg-berryDark"} onClick={() => copyMsg()}>
+          {copied ? "Copied!" : "Copy"}
+        </button>
+      </div>
+      {copied && (
+        <p className="mt-2 text-xs text-ink/60">
+          Message copied — paste it into your Story, DM, or chat.
+        </p>
+      )}
+    </div>
   );
 }
