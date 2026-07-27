@@ -183,7 +183,10 @@ export default function Home() {
           <LogoLockup />
           <p>
             Date Credits are prepaid venue value, redeemable only at partner venues. Funds are never
-            transferable between members. © {new Date().getFullYear()} Tabled.
+            transferable between members. © {new Date().getFullYear()} Tabled ·{" "}
+            <a href="mailto:hello@tabled.club" className="font-semibold text-berry hover:underline">
+              hello@tabled.club
+            </a>
           </p>
         </div>
       </footer>
