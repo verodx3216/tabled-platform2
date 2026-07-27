@@ -5,7 +5,7 @@ import { useState } from "react";
 /** Admin: add a partner venue with its standing allocation. */
 export default function VenueForm({ token }: { token: string }) {
   const [f, setF] = useState({
-    name: "", city: "Raleigh", neighborhood: "", cuisine: "",
+    name: "", kind: "restaurant", city: "Raleigh", neighborhood: "", cuisine: "",
     days: "tue,wed,thu", times: "18:30,20:30", tablesPerSlot: "2", leadHours: "48",
     contact: "", notes: "",
   });
@@ -29,6 +29,9 @@ export default function VenueForm({ token }: { token: string }) {
   return (
     <form onSubmit={submit} className="mt-3 flex flex-wrap items-center gap-2">
       <input className={input} placeholder="Venue name" value={f.name} onChange={e => set("name", e.target.value)} required />
+      <select className={input} value={f.kind} onChange={e => set("kind", e.target.value)}>
+        <option>restaurant</option><option>cafe</option><option>rooftop</option><option>bar</option><option>activity</option>
+      </select>
       <input className={input + " w-28"} placeholder="City" value={f.city} onChange={e => set("city", e.target.value)} required />
       <input className={input + " w-32"} placeholder="Neighborhood" value={f.neighborhood} onChange={e => set("neighborhood", e.target.value)} />
       <input className={input + " w-28"} placeholder="Cuisine" value={f.cuisine} onChange={e => set("cuisine", e.target.value)} />

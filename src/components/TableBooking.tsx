@@ -2,7 +2,11 @@
 
 import { useEffect, useState } from "react";
 
-type Opt = { venueId: string; venueName: string; neighborhood: string | null; cuisine: string | null; date: string; time: string };
+type Opt = { venueId: string; venueName: string; kind?: string; neighborhood: string | null; cuisine: string | null; date: string; time: string };
+
+const KIND_LABEL: Record<string, string> = {
+  cafe: "☕ coffee date", rooftop: "🌇 rooftop", bar: "🍸 drinks", activity: "🎯 activity",
+};
 type Booking = { code: string; venueName: string; neighborhood: string | null; date: string; time: string };
 
 function nice(d: string, t: string) {
@@ -106,7 +110,8 @@ export default function TableBooking({ token, candidateEmail, candidateName }:
           {options.map((o, i) => (
             <button key={i} disabled={busy} onClick={() => confirm(o)}
               className="block w-full rounded-xl bg-white px-4 py-3 text-left text-sm shadow-sm hover:bg-berry hover:text-white disabled:opacity-50">
-              <b>{o.venueName}</b>{o.neighborhood ? ` · ${o.neighborhood}` : ""} — {nice(o.date, o.time)}
+              <b>{o.venueName}</b>{o.neighborhood ? ` · ${o.neighborhood}` : ""}
+              {o.kind && KIND_LABEL[o.kind] ? ` · ${KIND_LABEL[o.kind]}` : ""} — {nice(o.date, o.time)}
             </button>
           ))}
         </div>
@@ -136,7 +141,8 @@ export default function TableBooking({ token, candidateEmail, candidateName }:
                 <button key={i} type="button" onClick={() => togglePick(o)}
                   className={`block w-full rounded-xl px-4 py-3 text-left text-sm shadow-sm transition ${
                     on ? "bg-berry text-white" : "bg-white hover:bg-white/70"}`}>
-                  <b>{o.venueName}</b>{o.neighborhood ? ` · ${o.neighborhood}` : ""} — {nice(o.date, o.time)}
+                  <b>{o.venueName}</b>{o.neighborhood ? ` · ${o.neighborhood}` : ""}
+                  {o.kind && KIND_LABEL[o.kind] ? ` · ${KIND_LABEL[o.kind]}` : ""} — {nice(o.date, o.time)}
                 </button>
               );
             })}

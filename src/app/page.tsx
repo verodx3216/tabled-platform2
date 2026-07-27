@@ -227,6 +227,10 @@ export default function Home() {
                 Creators
               </Link>{" "}
               ·{" "}
+              <Link href="/partners" className="font-semibold text-berry hover:underline">
+                Partner venues
+              </Link>{" "}
+              ·{" "}
               <a href="mailto:hello@tabled.club" className="font-semibold text-berry hover:underline">
                 hello@tabled.club
               </a>

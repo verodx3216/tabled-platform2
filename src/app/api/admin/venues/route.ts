@@ -7,6 +7,7 @@ export const runtime = "nodejs";
 const schema = z.object({
   token: z.string(),
   name: z.string().min(1).max(120),
+  kind: z.enum(["restaurant", "cafe", "rooftop", "bar", "activity"]).default("restaurant"),
   city: z.string().min(1).max(60),
   neighborhood: z.string().max(120).optional().or(z.literal("")),
   cuisine: z.string().max(120).optional().or(z.literal("")),
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
   }
   const d = p.data;
   const id = await venueStore().addVenue({
-    name: d.name, city: d.city, neighborhood: d.neighborhood || null,
+    name: d.name, kind: d.kind, city: d.city, neighborhood: d.neighborhood || null,
     cuisine: d.cuisine || null, days: d.days.toLowerCase(), times: d.times,
     tablesPerSlot: d.tablesPerSlot, leadHours: d.leadHours,
     contact: d.contact || null, notes: d.notes || null,

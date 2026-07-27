@@ -19,6 +19,7 @@ export default async function AdminClub({ searchParams }: { searchParams: { toke
   const mutuals = await store.listMutuals();
   const venues = await venueStore().listVenues();
   const bookings = await venueStore().listBookings();
+  const partnerApps = await venueStore().listPartnerApps();
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-12">
@@ -43,6 +44,18 @@ export default async function AdminClub({ searchParams }: { searchParams: { toke
           </li>
         ))}
         {bookings.length === 0 && <li className="text-ink/50">None yet.</li>}
+      </ul>
+
+      <h2 className="mt-8 font-serif text-xl font-bold text-berryDark">Partner applications ({partnerApps.length})</h2>
+      <ul className="mt-2 space-y-1 text-sm">
+        {partnerApps.map((a) => (
+          <li key={a.id} className="rounded-xl bg-cream px-4 py-2">
+            <b>{a.venueName}</b> · {a.kind} · {a.city}{a.neighborhood ? ` (${a.neighborhood})` : ""} —{" "}
+            {a.contactName || "no name"} · {a.email}{a.phone ? ` · ${a.phone}` : ""}
+            {a.note && <span className="ml-2 text-xs text-ink/60">“{a.note}”</span>}
+          </li>
+        ))}
+        {partnerApps.length === 0 && <li className="text-ink/50">None yet — send the campaign.</li>}
       </ul>
 
       <h2 className="mt-8 font-serif text-xl font-bold text-berryDark">Partner venues ({venues.length})</h2>

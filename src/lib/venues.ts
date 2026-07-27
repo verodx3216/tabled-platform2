@@ -17,6 +17,7 @@
 export type Venue = {
   id: string;
   name: string;
+  kind: string; // restaurant | cafe | rooftop | bar | activity
   city: string;
   neighborhood: string | null;
   cuisine: string | null;
@@ -33,6 +34,7 @@ export type Venue = {
 export type SlotOption = {
   venueId: string;
   venueName: string;
+  kind: string;
   neighborhood: string | null;
   cuisine: string | null;
   date: string; // YYYY-MM-DD
@@ -60,8 +62,16 @@ export type Booking = {
   createdAt: string;
 };
 
+export type PartnerApp = {
+  id: string; venueName: string; kind: string | null; city: string | null;
+  neighborhood: string | null; contactName: string | null; email: string | null;
+  phone: string | null; instagram: string | null; note: string | null; createdAt: string;
+};
+
 export interface VenueStore {
   addVenue(v: Omit<Venue, "id" | "active" | "createdAt">): Promise<string>;
+  addPartnerApp(p: Omit<PartnerApp, "id" | "createdAt">): Promise<void>;
+  listPartnerApps(): Promise<PartnerApp[]>;
   listVenues(): Promise<Venue[]>;
   listBookings(): Promise<Booking[]>;
   availability(city: string, daysAhead?: number): Promise<SlotOption[]>;
@@ -77,6 +87,7 @@ const DDL = [
   `CREATE TABLE IF NOT EXISTS venues (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
+    kind TEXT NOT NULL DEFAULT 'restaurant',
     city TEXT NOT NULL,
     neighborhood TEXT,
     cuisine TEXT,
@@ -109,6 +120,19 @@ const DDL = [
     status TEXT NOT NULL DEFAULT 'confirmed',
     created_at TEXT NOT NULL,
     UNIQUE(venue_id, date, time, slot_no)
+  )`,
+  `CREATE TABLE IF NOT EXISTS partner_applications (
+    id TEXT PRIMARY KEY,
+    venue_name TEXT NOT NULL,
+    kind TEXT,
+    city TEXT,
+    neighborhood TEXT,
+    contact_name TEXT,
+    email TEXT,
+    phone TEXT,
+    instagram TEXT,
+    note TEXT,
+    created_at TEXT NOT NULL
   )`,
 ];
 
@@ -151,7 +175,7 @@ function computeAvailability(
         const used = booked.get(`${v.id}|${date}|${time}`) ?? 0;
         if (used >= v.tablesPerSlot) continue;
         out.push({
-          venueId: v.id, venueName: v.name, neighborhood: v.neighborhood,
+          venueId: v.id, venueName: v.name, kind: v.kind, neighborhood: v.neighborhood,
           cuisine: v.cuisine, date, time,
         });
       }
@@ -161,7 +185,7 @@ function computeAvailability(
   return out;
 }
 
-const VENUE_COLS = `id, name, city, neighborhood, cuisine, days, times,
+const VENUE_COLS = `id, name, kind, city, neighborhood, cuisine, days, times,
   tables_per_slot AS "tablesPerSlot", lead_hours AS "leadHours",
   contact, notes, active, created_at AS "createdAt"`;
 
@@ -169,7 +193,10 @@ const VENUE_COLS = `id, name, city, neighborhood, cuisine, days, times,
 function pgStore(url: string): VenueStore {
   const postgres = require("postgres") as typeof import("postgres");
   const sql = postgres(url, { max: 1 });
-  const ready = (async () => { for (const d of DDL) await sql.unsafe(d); })();
+  const ready = (async () => {
+    for (const d of DDL) await sql.unsafe(d);
+    await sql.unsafe(`ALTER TABLE venues ADD COLUMN IF NOT EXISTS kind TEXT NOT NULL DEFAULT 'restaurant'`);
+  })();
 
   async function venueList(): Promise<Venue[]> {
     const r = await sql.unsafe(`SELECT ${VENUE_COLS} FROM venues ORDER BY created_at DESC`);
@@ -185,9 +212,21 @@ function pgStore(url: string): VenueStore {
     async addVenue(v) {
       await ready;
       const id = newId("vn");
-      await sql`INSERT INTO venues (id,name,city,neighborhood,cuisine,days,times,tables_per_slot,lead_hours,contact,notes,active,created_at)
-        VALUES (${id},${v.name},${v.city},${v.neighborhood},${v.cuisine},${v.days},${v.times},${v.tablesPerSlot},${v.leadHours},${v.contact},${v.notes},1,${new Date().toISOString()})`;
+      await sql`INSERT INTO venues (id,name,kind,city,neighborhood,cuisine,days,times,tables_per_slot,lead_hours,contact,notes,active,created_at)
+        VALUES (${id},${v.name},${v.kind},${v.city},${v.neighborhood},${v.cuisine},${v.days},${v.times},${v.tablesPerSlot},${v.leadHours},${v.contact},${v.notes},1,${new Date().toISOString()})`;
       return id;
+    },
+    async addPartnerApp(p) {
+      await ready;
+      await sql`INSERT INTO partner_applications (id,venue_name,kind,city,neighborhood,contact_name,email,phone,instagram,note,created_at)
+        VALUES (${newId("pa")},${p.venueName},${p.kind},${p.city},${p.neighborhood},${p.contactName},${p.email},${p.phone},${p.instagram},${p.note},${new Date().toISOString()})`;
+    },
+    async listPartnerApps() {
+      await ready;
+      const r = await sql`SELECT id, venue_name AS "venueName", kind, city, neighborhood,
+        contact_name AS "contactName", email, phone, instagram, note, created_at AS "createdAt"
+        FROM partner_applications ORDER BY created_at DESC`;
+      return r as unknown as PartnerApp[];
     },
     async listVenues() { await ready; return venueList(); },
     async listBookings() {
@@ -265,6 +304,7 @@ function liteStore(url: string): VenueStore {
   const { DatabaseSync } = require("node:sqlite");
   const db = new DatabaseSync(url.replace(/^file:/, ""));
   for (const d of DDL) db.exec(d);
+  try { db.exec(`ALTER TABLE venues ADD COLUMN kind TEXT NOT NULL DEFAULT 'restaurant'`); } catch { /* exists */ }
   const cols = VENUE_COLS.replace(/"/g, "");
 
   function venueList(): Venue[] {
@@ -279,10 +319,20 @@ function liteStore(url: string): VenueStore {
   return {
     async addVenue(v) {
       const id = newId("vn");
-      db.prepare(`INSERT INTO venues (id,name,city,neighborhood,cuisine,days,times,tables_per_slot,lead_hours,contact,notes,active,created_at)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,1,?)`)
-        .run(id, v.name, v.city, v.neighborhood, v.cuisine, v.days, v.times, v.tablesPerSlot, v.leadHours, v.contact, v.notes, new Date().toISOString());
+      db.prepare(`INSERT INTO venues (id,name,kind,city,neighborhood,cuisine,days,times,tables_per_slot,lead_hours,contact,notes,active,created_at)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,1,?)`)
+        .run(id, v.name, v.kind, v.city, v.neighborhood, v.cuisine, v.days, v.times, v.tablesPerSlot, v.leadHours, v.contact, v.notes, new Date().toISOString());
       return id;
+    },
+    async addPartnerApp(p) {
+      db.prepare(`INSERT INTO partner_applications (id,venue_name,kind,city,neighborhood,contact_name,email,phone,instagram,note,created_at)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?)`)
+        .run(newId("pa"), p.venueName, p.kind, p.city, p.neighborhood, p.contactName, p.email, p.phone, p.instagram, p.note, new Date().toISOString());
+    },
+    async listPartnerApps() {
+      return db.prepare(`SELECT id, venue_name AS venueName, kind, city, neighborhood,
+        contact_name AS contactName, email, phone, instagram, note, created_at AS createdAt
+        FROM partner_applications ORDER BY created_at DESC`).all() as unknown as PartnerApp[];
     },
     async listVenues() { return venueList(); },
     async listBookings() {
