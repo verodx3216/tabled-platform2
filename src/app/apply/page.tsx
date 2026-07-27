@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { LogoLockup } from "@/components/Logo";
+import { cityNames } from "@/content/cities";
 
 /**
  * Founding member application. On success the member is redirected straight
@@ -90,7 +91,8 @@ export default function Apply() {
             <div>
               <label className={label}>City</label>
               <select className={input} value={form.city} onChange={e => set("city", e.target.value)}>
-                <option>Raleigh</option><option>New York</option><option>Miami</option><option>Dubai</option>
+                {cityNames.map(c => <option key={c}>{c}</option>)}
+                <option>Dubai</option>
               </select>
             </div>
           </div>

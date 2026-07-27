@@ -34,6 +34,8 @@ export type JoinResult = { position: number; total: number; refCode: string };
 interface WaitlistStore {
   upsert(entry: NewWaitlistEntry): Promise<JoinResult>;
   list(): Promise<WaitlistEntry[]>;
+  /** Founding-application counts per city (Race to 500 leaderboard). */
+  countByCity(): Promise<Array<{ city: string; count: number }>>;
 }
 
 const DDL = `
@@ -106,6 +108,15 @@ function postgresStore(url: string): WaitlistStore {
       `;
       return rows as unknown as WaitlistEntry[];
     },
+    async countByCity() {
+      await ready;
+      const rows = await sql`
+        SELECT city, COUNT(*)::int AS count FROM waitlist_entries
+        WHERE city IS NOT NULL AND city <> ''
+        GROUP BY city ORDER BY count DESC
+      `;
+      return rows as unknown as Array<{ city: string; count: number }>;
+    },
   };
 }
 
@@ -154,6 +165,14 @@ function sqliteStore(url: string): WaitlistStore {
            FROM waitlist_entries ORDER BY created_at DESC`
         )
         .all() as WaitlistEntry[];
+    },
+    async countByCity() {
+      return db
+        .prepare(
+          `SELECT city, COUNT(*) AS count FROM waitlist_entries
+           WHERE city IS NOT NULL AND city <> '' GROUP BY city ORDER BY count DESC`
+        )
+        .all() as Array<{ city: string; count: number }>;
     },
   };
 }

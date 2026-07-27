@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { cityNames } from "@/content/cities";
 
 /**
  * Waitlist form with growth mechanics:
@@ -101,9 +102,9 @@ export default function WaitlistForm({ compact = false }: { compact?: boolean })
               onChange={(e) => setCity(e.target.value)}
               className="rounded-full border border-rose/40 bg-white px-3 py-1.5 text-ink outline-none focus:border-berry"
             >
-              <option>New York</option>
-              <option>Miami</option>
-              <option>Raleigh</option>
+              {cityNames.map((c) => (
+                <option key={c}>{c}</option>
+              ))}
               <option>Dubai</option>
               <option>Other</option>
             </select>
