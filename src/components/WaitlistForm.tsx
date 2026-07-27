@@ -1,13 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
+/**
+ * Waitlist form with growth mechanics:
+ * - captures ?ref= (referral code) and ?utm_source= from the URL
+ * - on success shows the member's queue position and their personal share link
+ * - one-tap WhatsApp share + copy-link button
+ */
 export default function WaitlistForm({ compact = false }: { compact?: boolean }) {
   const [email, setEmail] = useState("");
   const [city, setCity] = useState("Dubai");
   const [interest, setInterest] = useState<"member" | "host" | "venue-partner">("member");
   const [state, setState] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [message, setMessage] = useState("");
+  const [position, setPosition] = useState<number | null>(null);
+  const [refCode, setRefCode] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [urlRef, setUrlRef] = useState<string | undefined>(undefined);
+  const [utm, setUtm] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    setUrlRef(p.get("ref") ?? undefined);
+    setUtm(p.get("utm_source") ?? p.get("src") ?? undefined);
+  }, []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -16,10 +33,12 @@ export default function WaitlistForm({ compact = false }: { compact?: boolean })
       const res = await fetch("/api/waitlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, city, interest, source: "site" }),
+        body: JSON.stringify({ email, city, interest, source: utm ?? "site", ref: urlRef }),
       });
       const data = await res.json();
       if (data.ok) {
+        setPosition(data.position ?? null);
+        setRefCode(data.refCode ?? "");
         setState("done");
       } else {
         setState("error");
@@ -32,13 +51,42 @@ export default function WaitlistForm({ compact = false }: { compact?: boolean })
   }
 
   if (state === "done") {
+    const shareUrl = `https://tabled.club?ref=${refCode}`;
+    const shareText = encodeURIComponent(
+      `I just joined the waitlist for Tabled — the members' dining club where your membership becomes real dates at Dubai's best tables. 500 founding seats. Join the line with my link: ${shareUrl}`
+    );
     return (
       <div className="rounded-2xl bg-cream px-6 py-5 text-berryDark">
-        <p className="font-serif text-lg font-bold">You&apos;re on the list.</p>
-        <p className="mt-1 text-sm text-ink/80">
-          Founding members get first seats at the autumn dinners, founding pricing, and priority
-          verification. We&apos;ll be in touch soon.
+        <p className="font-serif text-lg font-bold">
+          You&apos;re on the list{position ? ` — #${position.toLocaleString()} in line` : ""}.
         </p>
+        <p className="mt-1 text-sm text-ink/80">
+          The first 500 founding seats are offered in order of impact: members who bring great
+          people move up. Share your personal link —
+        </p>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <code className="rounded-full bg-white px-4 py-2 text-sm text-berryDark">{shareUrl}</code>
+          <a
+            href={`https://wa.me/?text=${shareText}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-full bg-[#25D366] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+          >
+            Share on WhatsApp
+          </a>
+          <button
+            type="button"
+            onClick={() => {
+              navigator.clipboard?.writeText(shareUrl).then(() => {
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+              });
+            }}
+            className="rounded-full bg-berryDark px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+          >
+            {copied ? "Copied!" : "Copy link"}
+          </button>
+        </div>
       </div>
     );
   }

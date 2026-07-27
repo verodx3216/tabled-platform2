@@ -38,6 +38,8 @@ export default async function AdminWaitlist({
             <th className="py-2 pr-4">Email</th>
             <th className="py-2 pr-4">City</th>
             <th className="py-2 pr-4">Interest</th>
+            <th className="py-2 pr-4">Ref code</th>
+            <th className="py-2 pr-4">Referred by</th>
             <th className="py-2">Joined</th>
           </tr>
         </thead>
@@ -47,6 +49,8 @@ export default async function AdminWaitlist({
               <td className="py-2 pr-4">{e.email}</td>
               <td className="py-2 pr-4">{e.city ?? "—"}</td>
               <td className="py-2 pr-4">{e.interest ?? "—"}</td>
+              <td className="py-2 pr-4">{e.refCode ?? "—"}</td>
+              <td className="py-2 pr-4">{e.referredBy ?? "—"}</td>
               <td className="py-2">{e.createdAt.slice(0, 10)}</td>
             </tr>
           ))}
