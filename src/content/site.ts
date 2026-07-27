@@ -36,8 +36,9 @@ export const tiers = [
     name: "Guest",
     price: "Free",
     period: "",
-    features: ["ID-verified profile", "Receive hosted invitations", "Book curated dinners"],
+    features: ["ID-verified profile", "Receive hosted invitations", "Book a table when invited"],
     highlight: false,
+    accent: false,
   },
   {
     name: "Member",
@@ -46,10 +47,11 @@ export const tiers = [
     features: [
       "$59 in Date Credits every month",
       "Credits roll over — always yours",
-      "Curated introductions weekly",
-      "Access to members' dinners",
+      "Nine introductions at a time — you choose",
+      "We book the table when it's mutual",
     ],
     highlight: true,
+    accent: false,
   },
   {
     name: "Select",
@@ -62,6 +64,20 @@ export const tiers = [
       "Priority matching with human review",
     ],
     highlight: false,
+    accent: false,
+  },
+  {
+    name: "Coupled",
+    price: "Free",
+    period: "once you're dating",
+    features: [
+      "Found your person? Membership fees end",
+      "Merge wallets — up to 20% bonus credits",
+      "Member pricing at the city's best restaurants",
+      "The only plan designed to be your last",
+    ],
+    highlight: false,
+    accent: true,
   },
 ];
 
@@ -87,29 +103,38 @@ export const faqs = [
     a: "Top up your wallet anytime — top-ups convert 100% into Date Credits, with no club fee (that applies only to membership). If an invitation exceeds your balance, the difference is added instantly at confirmation. Your plan is a floor, never a ceiling. And your balance is always private — a guest sees the invitation, never a number.",
   },
   {
+    q: "What do founding members get?",
+    a: "The first 500 members in every city get their first date on the club: when your first mutual match books a table, we issue a gift card to that restaurant — up to $100 — and you pay only the balance. Plus the Founding 90 (for your first 90 days, 100% of your membership fee converts to Date Credits — no club fee at all), a free VIP verified badge for a full year, and founding pricing locked for life.",
+  },
+  {
+    q: "What happens when it works?",
+    a: "You graduate. Coupled membership is free — when you and your person make it official, your membership fees end, your wallets merge, top-ups earn up to 20% bonus credits, and you keep member pricing at the city's best restaurants. Tabled is the only dating membership designed to make itself free.",
+  },
+  {
     q: "When do you launch?",
-    a: "Founding members' dinners begin this autumn. The waitlist gets first seats, founding pricing, and priority verification.",
+    a: "Founding tables begin this autumn. The waitlist gets first seats, founding pricing, and priority verification.",
   },
 ];
 
-/** Phase-0 dinners — displayed on /dinners. Booking opens with Stripe integration (docs/INTEGRATIONS.md #1). */
-export const upcomingDinners = [
-  {
-    title: "The Founders' Table No. 1",
-    tag: "Table No. 1 · September",
-    meta: "Dinner for six · curated by application",
-    note: "A balanced table at one of the city's best venues. Venue revealed 48 hours before.",
-  },
-  {
-    title: "The Founders' Table No. 2",
-    tag: "Table No. 2 · September",
-    meta: "Dinner for six · ages 28–38",
-    note: "Curated for compatible energy. Venue revealed 48 hours before.",
-  },
-  {
-    title: "The Founders' Table No. 3",
-    tag: "Table No. 3 · October",
-    meta: "Dinner for six · ages 35–45",
-    note: "Curated for compatible energy. Venue revealed 48 hours before.",
-  },
-];
+/** Founding offer — displayed on the homepage and /dinners. */
+export const foundingOffer = {
+  kicker: "The founding 500 — every city",
+  headline: "Your first date is on us.",
+  sub: "The first 500 founding members in each city don't just get early access — the club funds the first table.",
+  perks: [
+    {
+      title: "First date on the club",
+      body: "When your first mutual match books a table, we issue a gift card to that restaurant — up to $100. You choose the person, you choose the evening; we pick up the table.",
+    },
+    {
+      title: "The Founding 90",
+      body: "For your first 90 days, 100% of your membership fee converts into Date Credits. No club fee, nothing held back — every dollar becomes dinner.",
+    },
+    {
+      title: "VIP badge — free for a year",
+      body: "The verified-standing VIP badge, normally reserved for Select, free on your profile for a full year. Your introductions see it before they ever see a message.",
+    },
+  ],
+  fineprint:
+    "First-table gift card is issued when a mutual match books a confirmed table, redeemable only at that venue, up to $100. Founding pricing is locked for life for the first 500 members per city.",
+};

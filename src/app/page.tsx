@@ -1,7 +1,7 @@
 import Link from "next/link";
 import WaitlistForm from "@/components/WaitlistForm";
 import { LogoLockup } from "@/components/Logo";
-import { site, howItWorks, tiers, faqs } from "@/content/site";
+import { site, howItWorks, tiers, faqs, foundingOffer } from "@/content/site";
 
 export default function Home() {
   return (
@@ -15,7 +15,7 @@ export default function Home() {
           <div className="flex items-center gap-6 text-sm text-cream/90">
             <Link href="#how" className="hover:text-white">How it works</Link>
             <Link href="#membership" className="hover:text-white">Membership</Link>
-            <Link href="/dinners" className="hover:text-white">Dinners</Link>
+            <Link href="/dinners" className="hover:text-white">The First Table</Link>
             <Link
               href="#waitlist"
               className="rounded-full border border-cream/40 px-4 py-1.5 hover:border-white hover:text-white"
@@ -36,7 +36,7 @@ export default function Home() {
           <div className="mt-10 max-w-xl" id="waitlist-hero">
             <WaitlistForm compact />
             <p className="mt-3 text-sm text-cream/60">
-              Founding waitlist · first seats at the autumn dinners · founding pricing
+              Founding waitlist · first date on the club · founding pricing locked for life
             </p>
           </div>
         </div>
@@ -94,18 +94,25 @@ export default function Home() {
         <h2 className="mt-3 font-serif text-4xl font-bold text-berryDark">
           A fee you keep, not a fee you lose
         </h2>
-        <div className="mt-12 grid gap-6 md:grid-cols-3">
+        <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {tiers.map((t) => (
             <div
               key={t.name}
               className={`rounded-3xl p-8 ${
                 t.highlight
                   ? "bg-berryDark text-white shadow-xl"
-                  : "bg-creamLight text-ink"
+                  : t.accent
+                    ? "border-2 border-berry bg-white text-ink shadow-sm"
+                    : "bg-creamLight text-ink"
               }`}
             >
               <h3 className={`font-serif text-xl font-bold ${t.highlight ? "text-cream" : "text-berryDark"}`}>
                 {t.name}
+                {t.accent && (
+                  <span className="ml-2 rounded-full bg-berry px-3 py-1 align-middle text-xs font-sans font-semibold text-white">
+                    the goal
+                  </span>
+                )}
               </h3>
               <p className="mt-4">
                 <span className="font-serif text-4xl font-bold">{t.price}</span>
@@ -143,6 +150,36 @@ export default function Home() {
         </p>
       </section>
 
+      {/* ===== Founding offer ===== */}
+      <section id="founding" className="bg-berryDark py-20 text-white">
+        <div className="mx-auto max-w-6xl px-6">
+          <p className="text-sm font-semibold uppercase tracking-[0.3em] text-rose">
+            {foundingOffer.kicker}
+          </p>
+          <h2 className="mt-3 font-serif text-4xl font-bold text-cream md:text-5xl">
+            {foundingOffer.headline}
+          </h2>
+          <p className="mt-4 max-w-2xl text-lg text-white/85">{foundingOffer.sub}</p>
+          <div className="mt-12 grid gap-6 md:grid-cols-3">
+            {foundingOffer.perks.map((p) => (
+              <div key={p.title} className="rounded-3xl bg-white/10 p-8 backdrop-blur">
+                <h3 className="font-serif text-xl font-bold text-cream">{p.title}</h3>
+                <p className="mt-3 text-white/85">{p.body}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-10 flex flex-col items-start gap-5 md:flex-row md:items-center md:justify-between">
+            <Link
+              href="/apply"
+              className="rounded-full bg-berry px-8 py-3.5 font-semibold text-white hover:opacity-90"
+            >
+              Claim a founding seat
+            </Link>
+            <p className="max-w-xl text-xs text-white/50">{foundingOffer.fineprint}</p>
+          </div>
+        </div>
+      </section>
+
       {/* ===== FAQ ===== */}
       <section className="bg-cream/60 py-20">
         <div className="mx-auto max-w-4xl px-6">
@@ -168,7 +205,7 @@ export default function Home() {
             The first 500 members set the table.
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-cream/85">
-            Join the founding waitlist for first seats at the autumn dinners, founding pricing locked
+            Join the founding waitlist for your first date on the club, founding pricing locked
             for life, and priority verification.
           </p>
           <div className="mx-auto mt-8 max-w-xl text-left">
