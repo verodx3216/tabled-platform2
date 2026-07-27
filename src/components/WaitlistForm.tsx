@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { cityNames, comingSoon } from "@/content/cities";
+import { cityNamesAlpha, comingSoon } from "@/content/cities";
 
 /**
  * Waitlist form with growth mechanics:
@@ -102,7 +102,7 @@ export default function WaitlistForm({ compact = false }: { compact?: boolean })
               onChange={(e) => setCity(e.target.value)}
               className="rounded-full border border-rose/40 bg-white px-3 py-1.5 text-ink outline-none focus:border-berry"
             >
-              {cityNames.map((c) => (
+              {cityNamesAlpha.map((c) => (
                 <option key={c}>{c}</option>
               ))}
               {comingSoon.map((c) => (
