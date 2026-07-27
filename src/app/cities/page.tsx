@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export const metadata = {
   title: "The Race to 500 — Tabled",
   description:
-    "Fifty cities. Five hundred founding seats each. When your city reaches 500 founding applications, we launch it. Get your city to the table first.",
+    "Fifty cities, live at once. Five hundred founding seats each, claimed in order of application. Which city sets the table first?",
 };
 
 export default async function Cities() {
@@ -21,7 +21,7 @@ export default async function Cities() {
       ...c,
       count: byCity.get(c.name.toLowerCase()) ?? 0,
     }))
-    .sort((a, b) => (b.live ? 1 : 0) - (a.live ? 1 : 0) || b.count - a.count);
+    .sort((a, b) => b.count - a.count);
 
   return (
     <main className="min-h-screen bg-creamLight pb-24">
@@ -37,12 +37,13 @@ export default async function Cities() {
           The Race to 500
         </p>
         <h1 className="mt-3 max-w-3xl font-serif text-5xl font-bold text-berryDark md:text-6xl">
-          Your city launches when it earns it.
+          Every city is live. Five hundred seats each.
         </h1>
         <p className="mt-5 max-w-2xl text-lg text-ink/80">
-          Fifty cities. Five hundred founding seats each. When a city reaches {UNLOCK_AT} founding
-          applications, we launch it — venues, introductions, first dates on the club. The order
-          isn&apos;t up to us. It&apos;s up to you. Apply, then bring your city with you.
+          All fifty founding classes are open at once. Seats are claimed in order of
+          application, city by city — first date on the club, founding pricing for life, VIP
+          badge included. Introductions and first tables begin as your city fills, so the only
+          question is which city sets the table first. Apply, then bring your city with you.
         </p>
         <Link
           href="/apply"
@@ -55,42 +56,34 @@ export default async function Cities() {
       <section className="mx-auto max-w-6xl px-6">
         <div className="grid gap-3 md:grid-cols-2">
           {rows.map((c, i) => {
-            const liveCount = rows.filter((r) => r.live).length;
-            const rank = i - liveCount + 1;
+            const rank = i + 1;
+            const podium = rank <= 3 && c.count > 0;
             const pct = Math.min(100, Math.round((c.count / UNLOCK_AT) * 100));
             const showCount = c.count >= SHOW_COUNT_FROM;
             return (
               <div
                 key={c.name}
-                className={`rounded-2xl p-5 ${
-                  c.live ? "bg-berryDark text-white" : "bg-white shadow-sm"
-                }`}
+                className={`rounded-2xl p-5 ${podium ? "bg-berryDark text-white" : "bg-white shadow-sm"}`}
               >
                 <div className="flex items-baseline justify-between gap-3">
-                  <p className={`font-serif text-xl font-bold ${c.live ? "text-cream" : "text-berryDark"}`}>
-                    {!c.live && rank > 0 && (
-                      <span className="mr-2 font-sans text-sm text-ink/40">#{rank}</span>
-                    )}
+                  <p className={`font-serif text-xl font-bold ${podium ? "text-cream" : "text-berryDark"}`}>
+                    <span className={`mr-2 font-sans text-sm ${podium ? "text-rose" : "text-ink/40"}`}>#{rank}</span>
                     {c.name}
                   </p>
-                  {c.live ? (
-                    <span className="rounded-full bg-berry px-3 py-1 text-xs font-semibold text-white">
-                      Founding class open
-                    </span>
-                  ) : showCount ? (
-                    <span className="text-sm font-semibold text-berry">
+                  {showCount ? (
+                    <span className={`text-sm font-semibold ${podium ? "text-rose" : "text-berry"}`}>
                       {c.count.toLocaleString()} / {UNLOCK_AT}
                     </span>
                   ) : (
-                    <span className="text-xs font-semibold uppercase tracking-wide text-ink/40">
-                      Just opened — be first
+                    <span className={`text-xs font-semibold uppercase tracking-wide ${podium ? "text-white/60" : "text-ink/40"}`}>
+                      {c.count > 0 ? "Filling — founding seats open" : "Just opened — be first"}
                     </span>
                   )}
                 </div>
-                <div className={`mt-3 h-2 overflow-hidden rounded-full ${c.live ? "bg-white/20" : "bg-cream"}`}>
+                <div className={`mt-3 h-2 overflow-hidden rounded-full ${podium ? "bg-white/20" : "bg-cream"}`}>
                   <div
                     className="h-full rounded-full bg-berry"
-                    style={{ width: `${c.live ? 100 : Math.max(pct, c.count > 0 ? 2 : 0)}%` }}
+                    style={{ width: `${Math.max(pct, c.count > 0 ? 2 : 0)}%` }}
                   />
                 </div>
               </div>
@@ -98,8 +91,8 @@ export default async function Cities() {
           })}
         </div>
         <p className="mt-8 text-center text-sm text-ink/60">
-          Counts update live. Founding members who bring their city over the line get first
-          seats, founding pricing for life, and their first date on the club.
+          Counts update live. Every founding member gets founding pricing for life, the
+          Founding 90, a year of the VIP badge — and their first date on the club.
         </p>
 
         {/* International — coming soon */}

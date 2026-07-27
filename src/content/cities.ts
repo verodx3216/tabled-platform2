@@ -1,8 +1,8 @@
 /**
- * The Race to 500 — Tabled's 50-city national campaign.
- * Every city opens its founding waitlist; a city LAUNCHES when it reaches
- * UNLOCK_AT founding applications. Tiers control display order, nothing else —
- * the race decides the actual launch order.
+ * The Founding 500 — Tabled's 50-city national launch.
+ * Every city's founding class of 500 is OPEN AT ONCE; members claim seats in
+ * order of application per city. The leaderboard shows which cities are
+ * filling fastest — introductions and first tables begin as a city fills.
  */
 
 export const UNLOCK_AT = 500;
@@ -13,10 +13,9 @@ export const SHOW_COUNT_FROM = 25;
 export type RaceCity = { name: string; live?: boolean };
 
 export const raceCities: RaceCity[] = [
-  // Live first — the founding three
-  { name: "Raleigh", live: true },
-  { name: "New York", live: true },
-  { name: "Miami", live: true },
+  { name: "Raleigh" },
+  { name: "New York" },
+  { name: "Miami" },
   // First-unlock targets
   { name: "Austin" },
   { name: "Nashville" },
