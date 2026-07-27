@@ -217,18 +217,28 @@ export default function Home() {
 
       {/* ===== Footer ===== */}
       <footer className="border-t border-cream bg-white">
-        <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-4 px-6 py-10 text-sm text-ink/60 md:flex-row md:items-center">
-          <LogoLockup />
-          <p>
-            Date Credits are prepaid venue value, redeemable only at partner venues. Funds are never
-            transferable between members. © {new Date().getFullYear()} Tabled ·{" "}
-            <Link href="/creators" className="font-semibold text-berry hover:underline">
-              Creators
-            </Link>{" "}
-            ·{" "}
-            <a href="mailto:hello@tabled.club" className="font-semibold text-berry hover:underline">
-              hello@tabled.club
-            </a>
+        <div className="mx-auto max-w-6xl px-6 py-10 text-sm text-ink/60">
+          <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+            <LogoLockup />
+            <p>
+              Date Credits are prepaid venue value, redeemable only at partner venues. Funds are never
+              transferable between members. © {new Date().getFullYear()} Tabled ·{" "}
+              <Link href="/creators" className="font-semibold text-berry hover:underline">
+                Creators
+              </Link>{" "}
+              ·{" "}
+              <a href="mailto:hello@tabled.club" className="font-semibold text-berry hover:underline">
+                hello@tabled.club
+              </a>
+            </p>
+          </div>
+          <p className="mt-6 flex flex-wrap gap-x-4 gap-y-1 border-t border-cream pt-5 text-xs">
+            <Link href="/terms" className="hover:text-berry">Terms of Service</Link>
+            <Link href="/credits" className="hover:text-berry">Date Credits &amp; Wallet</Link>
+            <Link href="/privacy" className="hover:text-berry">Privacy</Link>
+            <Link href="/cookies" className="hover:text-berry">Cookies</Link>
+            <Link href="/guidelines" className="hover:text-berry">Community Guidelines</Link>
+            <Link href="/safety" className="hover:text-berry">Dating Safety</Link>
           </p>
         </div>
       </footer>

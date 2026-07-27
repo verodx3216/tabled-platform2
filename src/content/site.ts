@@ -84,7 +84,7 @@ export const tiers = [
 export const faqs = [
   {
     q: "What happens to my money if I don't go on dates?",
-    a: "It stays yours. 75% of every fee converts to Date Credits that bank and roll over month after month. Cancel any time and use your remaining balance at partner venues for a defined wind-down period. Your membership is stored value, not a sunk cost.",
+    a: "It stays yours. 75% of every fee converts to Date Credits that bank and roll over month after month. Credits never expire and carry no fees — cancel any time and your remaining balance stays redeemable at partner venues. Your membership is stored value, not a sunk cost.",
   },
   {
     q: "Is this a sugar dating site?",
