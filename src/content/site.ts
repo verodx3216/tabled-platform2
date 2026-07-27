@@ -7,9 +7,9 @@
 export const site = {
   name: "Tabled",
   tagline: "Your membership never disappears. It becomes dates.",
-  sub: "Real first dates at Dubai\u2019s best tables \u2014 matched by AI, funded by your membership, zero swiping.",
+  sub: "Real first dates at the city\u2019s best tables \u2014 matched by AI, funded by your membership, zero swiping.",
   waitlistCta: "Join the founding waitlist",
-  cities: ["Dubai", "Miami (2027)", "New York (2027)"],
+  cities: ["New York", "Miami", "Dubai (coming soon)"],
 };
 
 export const howItWorks = [
@@ -42,7 +42,7 @@ export const tiers = [
   {
     name: "Member",
     price: "$79",
-    period: "/month · AED 290",
+    period: "/month",
     features: [
       "$59 in Date Credits every month",
       "Credits roll over — always yours",
@@ -54,7 +54,7 @@ export const tiers = [
   {
     name: "Select",
     price: "$199",
-    period: "/month · AED 730",
+    period: "/month",
     features: [
       "$149 in Date Credits every month",
       "Host invitations — your treat, your table",
@@ -88,7 +88,7 @@ export const faqs = [
   },
   {
     q: "When do you launch?",
-    a: "Founding members' dinners begin in Dubai this autumn. The waitlist gets first seats, founding pricing, and priority verification.",
+    a: "Founding members' dinners begin this autumn. The waitlist gets first seats, founding pricing, and priority verification.",
   },
 ];
 
@@ -96,24 +96,24 @@ export const faqs = [
 export const upcomingDinners = [
   {
     title: "The Founders' Table No. 1",
-    city: "Dubai",
-    area: "DIFC",
+    city: "Founding table",
+    area: "Autumn 2026",
     date: "September 2026",
     seats: 6,
     note: "Three men, three women. Curated by application. Venue revealed 48h before.",
   },
   {
     title: "The Founders' Table No. 2",
-    city: "Dubai",
-    area: "Dubai Marina",
+    city: "Founding table",
+    area: "Autumn 2026",
     date: "September 2026",
     seats: 6,
     note: "Curated mix, 28–38. Venue revealed 48h before.",
   },
   {
     title: "The Founders' Table No. 3",
-    city: "Dubai",
-    area: "Jumeirah",
+    city: "Founding table",
+    area: "Autumn 2026",
     date: "October 2026",
     seats: 6,
     note: "Curated mix, 35–45. Venue revealed 48h before.",

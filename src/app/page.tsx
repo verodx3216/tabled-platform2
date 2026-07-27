@@ -26,7 +26,7 @@ export default function Home() {
         </nav>
         <div className="relative mx-auto max-w-6xl px-6 pb-24 pt-16 md:pt-24">
           <p className="text-sm font-semibold uppercase tracking-[0.3em] text-rose">
-            A members&apos; dining club · Dubai
+            A members&apos; dining club
           </p>
           <h1 className="mt-5 max-w-3xl font-serif text-5xl font-bold leading-tight md:text-6xl">
             Your membership never disappears.{" "}
@@ -69,7 +69,7 @@ export default function Home() {
           {[
             {
               t: "75% of your fee comes back as Date Credits",
-              b: "Spendable at Dubai's best venues. Unused credits roll over, month after month. On other apps the money vanishes — here it banks.",
+              b: "Spendable at the city's best venues. Unused credits roll over, month after month. On other apps the money vanishes — here it banks.",
             },
             {
               t: "Every member is verified. Every date is real.",

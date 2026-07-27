@@ -5,7 +5,7 @@ import { upcomingDinners } from "@/content/site";
 
 export const metadata = {
   title: "Founders' Dinners — Tabled",
-  description: "Curated six-seat dinners at Dubai's best tables. Application-only.",
+  description: "Curated six-seat dinners at the city's best tables. Application-only.",
 };
 
 export default function Dinners() {
@@ -27,7 +27,7 @@ export default function Dinners() {
         </h1>
         <p className="mt-5 max-w-2xl text-ink/80">
           Our first dinners are curated by application from the founding waitlist — a balanced table of
-          six at one of Dubai&apos;s best venues. Your ticket covers your seat; the venue is revealed 48
+          six at one of the city&apos;s best venues. Your ticket covers your seat; the venue is revealed 48
           hours before. Dinners are how the founding class meets while we verify profiles and train the
           matchmaker &mdash; then your one-on-one introductions begin.
         </p>

@@ -10,7 +10,7 @@ import { useEffect, useState } from "react";
  */
 export default function WaitlistForm({ compact = false }: { compact?: boolean }) {
   const [email, setEmail] = useState("");
-  const [city, setCity] = useState("Dubai");
+  const [city, setCity] = useState("New York");
   const [interest, setInterest] = useState<"member" | "host" | "venue-partner">("member");
   const [state, setState] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [message, setMessage] = useState("");
@@ -53,7 +53,7 @@ export default function WaitlistForm({ compact = false }: { compact?: boolean })
   if (state === "done") {
     const shareUrl = `https://tabled.club?ref=${refCode}`;
     const shareText = encodeURIComponent(
-      `I just joined the waitlist for Tabled — the members' dining club where your membership becomes real dates at Dubai's best tables. 500 founding seats. Join the line with my link: ${shareUrl}`
+      `I just joined the waitlist for Tabled — the members' dining club where your membership becomes real dates at the city's best tables. 500 founding seats. Join the line with my link: ${shareUrl}`
     );
     return (
       <div className="rounded-2xl bg-cream px-6 py-5 text-berryDark">
@@ -100,9 +100,10 @@ export default function WaitlistForm({ compact = false }: { compact?: boolean })
               onChange={(e) => setCity(e.target.value)}
               className="rounded-full border border-rose/40 bg-white px-3 py-1.5 text-ink outline-none focus:border-berry"
             >
-              <option>Dubai</option>
-              <option>Miami</option>
               <option>New York</option>
+              <option>Miami</option>
+              <option>Raleigh</option>
+              <option>Dubai</option>
               <option>Other</option>
             </select>
           </label>
