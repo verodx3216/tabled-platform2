@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { LogoLockup } from "@/components/Logo";
 import { waitlistStore } from "@/lib/waitlist";
-import { raceCities, UNLOCK_AT, SHOW_COUNT_FROM } from "@/content/cities";
+import { raceCities, comingSoon, UNLOCK_AT, SHOW_COUNT_FROM } from "@/content/cities";
 
 export const dynamic = "force-dynamic";
 
@@ -101,6 +101,26 @@ export default async function Cities() {
           Counts update live. Founding members who bring their city over the line get first
           seats, founding pricing for life, and their first date on the club.
         </p>
+
+        {/* International — coming soon */}
+        <div className="mt-12 rounded-3xl bg-berryDark p-8 text-center text-white">
+          <p className="text-sm font-semibold uppercase tracking-[0.3em] text-rose">
+            Beyond the fifty
+          </p>
+          <h2 className="mt-2 font-serif text-2xl font-bold text-cream">
+            {comingSoon.join(" · ")} — coming soon.
+          </h2>
+          <p className="mx-auto mt-2 max-w-xl text-sm text-white/80">
+            The club crosses oceans next. Join the waitlist and choose your city — when enough
+            of you are at the door, we bring the table to you.
+          </p>
+          <Link
+            href="/apply"
+            className="mt-5 inline-block rounded-full bg-berry px-7 py-3 font-semibold text-white hover:opacity-90"
+          >
+            Hold your city&apos;s seat
+          </Link>
+        </div>
       </section>
     </main>
   );

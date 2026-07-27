@@ -70,3 +70,7 @@ export const raceCities: RaceCity[] = [
 ];
 
 export const cityNames = raceCities.map((c) => c.name);
+
+/** International cities shown as "coming soon" — selectable at signup so we
+ *  bank demand, but not part of the US Race to 500. */
+export const comingSoon = ["Dubai", "London", "Singapore"];
