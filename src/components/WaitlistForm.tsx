@@ -64,6 +64,9 @@ export default function WaitlistForm({ compact = false }: { compact?: boolean })
           The first 500 founding seats are offered in order of impact: members who bring great
           people move up. Share your personal link —
         </p>
+        <a href="/apply" className="mt-3 block rounded-full bg-berry px-5 py-3 text-center font-semibold text-white hover:bg-berryDark">
+          Complete your founding application &rarr;
+        </a>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <code className="rounded-full bg-white px-4 py-2 text-sm text-berryDark">{shareUrl}</code>
           <a
