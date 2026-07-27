@@ -58,18 +58,34 @@ export default async function MemberPage({ params }: { params: { token: string }
             <div className="mt-4 space-y-6">
               {intros.map(c => (
                 <div key={c.candidateEmail} className="overflow-hidden rounded-3xl bg-white shadow-sm">
-                  <div className="flex gap-1">
-                    {c.photo1 && <img src={c.photo1} alt="" className="h-64 w-1/2 flex-1 object-cover" />}
-                    {c.photo2 && <img src={c.photo2} alt="" className="h-64 w-1/2 flex-1 object-cover" />}
+                  <div className="flex snap-x snap-mandatory gap-1 overflow-x-auto">
+                    {c.gallery.map((ph, i) => (
+                      <img key={i} src={ph} alt="" loading="lazy"
+                        className={`h-64 flex-none snap-start object-cover ${c.gallery.length === 1 ? "w-full" : c.gallery.length === 2 ? "w-1/2" : "w-[45%]"}`} />
+                    ))}
                   </div>
-                  <div className="p-6">
+                  {c.gallery.length > 2 && (
+                    <p className="px-6 pt-2 text-right text-[11px] text-ink/40">swipe for more photos →</p>
+                  )}
+                  <div className="p-6 pt-3">
                     <h3 className="font-serif text-2xl font-bold text-berryDark">
                       {c.name}, {c.age}
                     </h3>
                     <p className="mt-1 text-sm text-ink/60">
-                      {[c.profession, c.neighborhood].filter(Boolean).join(" · ")}
+                      {[c.profession, c.neighborhood, c.vibe].filter(Boolean).join(" · ")}
                     </p>
+                    {c.interests && (
+                      <div className="mt-2.5 flex flex-wrap gap-1.5">
+                        {c.interests.split(",").filter(Boolean).map((tag) => (
+                          <span key={tag} className="rounded-full bg-creamLight px-3 py-1 text-xs font-semibold text-berryDark">
+                            {tag.trim()}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                     {c.prompt1 && <p className="mt-3 text-sm text-ink/85"><b className="text-rose">Ideal Friday:</b> {c.prompt1}</p>}
+                    {c.loves && <p className="mt-1.5 text-sm text-ink/85"><b className="text-rose">Loves:</b> {c.loves}</p>}
+                    {c.dealbreaker && <p className="mt-1.5 text-sm text-ink/85"><b className="text-rose">Can&apos;t stand:</b> {c.dealbreaker}</p>}
                     {c.prompt2 && <p className="mt-1.5 text-sm text-ink/85"><b className="text-rose">Looking for:</b> {c.prompt2}</p>}
                     {c.note && (
                       <p className="mt-3 rounded-2xl bg-cream px-4 py-3 text-sm italic text-berryDark">

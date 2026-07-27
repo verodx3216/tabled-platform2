@@ -4,6 +4,8 @@ import { clubStore } from "@/lib/club";
 
 export const runtime = "nodejs";
 
+const photoSchema = z.string().startsWith("data:image/").max(450_000);
+
 const schema = z.object({
   name: z.string().min(1).max(80),
   email: z.string().email(),
@@ -17,8 +19,12 @@ const schema = z.object({
   prompt1: z.string().min(1).max(200),
   prompt2: z.string().min(1).max(200),
   availability: z.string().max(40).optional().or(z.literal("")),
-  photo1: z.string().startsWith("data:image/").max(450_000).nullable(),
-  photo2: z.string().startsWith("data:image/").max(450_000).nullable().optional(),
+  interests: z.string().max(300).optional().or(z.literal("")),
+  vibe: z.string().max(60).optional().or(z.literal("")),
+  loves: z.string().max(200).optional().or(z.literal("")),
+  dealbreaker: z.string().max(200).optional().or(z.literal("")),
+  /** Up to 8 photos, all public to introductions. */
+  photos: z.array(photoSchema).min(1).max(8),
 });
 
 export async function POST(req: NextRequest) {
@@ -37,7 +43,11 @@ export async function POST(req: NextRequest) {
       seeking: d.seeking, city: d.city, neighborhood: d.neighborhood || null,
       profession: d.profession || null, instagram: d.instagram || null,
       prompt1: d.prompt1, prompt2: d.prompt2, availability: d.availability || null,
-      photo1: d.photo1, photo2: d.photo2 ?? null,
+      interests: d.interests || null, vibe: d.vibe || null,
+      loves: d.loves || null, dealbreaker: d.dealbreaker || null,
+      photos: JSON.stringify(d.photos),
+      photo1: d.photos[0] ?? null, // lead photo kept for admin views & compatibility
+      photo2: d.photos[1] ?? null,
     });
     return NextResponse.json({ ok: true, token });
   } catch (e) {

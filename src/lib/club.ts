@@ -27,8 +27,13 @@ export type Profile = {
   prompt1: string | null; // ideal Friday
   prompt2: string | null; // what I'm looking for
   availability: string | null; // e.g. "weeknights,weekends"
-  photo1: string | null; // data URL
+  photo1: string | null; // data URL (lead photo — kept for compatibility)
   photo2: string | null;
+  photos: string | null;   // JSON array of data URLs (up to 8, all public to introductions)
+  interests: string | null; // comma-separated picks, e.g. "Wine,Live music,Travel"
+  vibe: string | null;      // energy at the table
+  loves: string | null;     // three things they love
+  dealbreaker: string | null; // one thing they can't stand
   status: string; // applied | approved | paused
   createdAt: string;
 };
@@ -38,7 +43,15 @@ export type NewProfile = Omit<Profile, "id" | "token" | "status" | "createdAt">;
 export type IntroCard = Pick<
   Profile,
   "name" | "age" | "profession" | "neighborhood" | "prompt1" | "prompt2" | "photo1" | "photo2"
-> & { candidateEmail: string; picked: boolean; mutual: boolean; note: string | null };
+  | "interests" | "vibe" | "loves" | "dealbreaker"
+> & {
+  candidateEmail: string;
+  picked: boolean;
+  mutual: boolean;
+  note: string | null;
+  /** All public photos (parsed) — up to 8. */
+  gallery: string[];
+};
 
 export interface ClubStore {
   createProfile(p: NewProfile): Promise<{ token: string; existing: boolean }>;
@@ -69,6 +82,11 @@ const DDL = [
     availability TEXT,
     photo1 TEXT,
     photo2 TEXT,
+    photos TEXT,
+    interests TEXT,
+    vibe TEXT,
+    loves TEXT,
+    dealbreaker TEXT,
     status TEXT NOT NULL DEFAULT 'applied',
     created_at TEXT NOT NULL
   )`,
@@ -101,8 +119,22 @@ function newToken() {
 }
 
 const PROFILE_COLS = `id, email, token, name, age, gender, seeking, city, neighborhood,
-  profession, instagram, prompt1, prompt2, availability, photo1, photo2, status,
+  profession, instagram, prompt1, prompt2, availability, photo1, photo2, photos,
+  interests, vibe, loves, dealbreaker, status,
   created_at AS "createdAt"`;
+
+const PROFILE_MIGRATIONS = ["photos", "interests", "vibe", "loves", "dealbreaker"];
+
+/** All public photos for a row: parsed photos JSON, falling back to legacy photo1/2. */
+function galleryOf(r: Record<string, unknown>): string[] {
+  if (typeof r.photos === "string" && r.photos.startsWith("[")) {
+    try {
+      const arr = JSON.parse(r.photos);
+      if (Array.isArray(arr) && arr.length) return arr.filter((p) => typeof p === "string");
+    } catch { /* fall through */ }
+  }
+  return [r.photo1, r.photo2].filter((p): p is string => typeof p === "string" && !!p);
+}
 
 // ---------- Postgres ----------
 function pgStore(url: string): ClubStore {
@@ -110,14 +142,18 @@ function pgStore(url: string): ClubStore {
   const sql = postgres(url, { max: 1 });
   const ready = (async () => {
     for (const d of DDL) await sql.unsafe(d);
-    // migration for tables created before matchmaker notes existed
+    // migrations for tables created before newer columns existed
     await sql.unsafe(`ALTER TABLE intros ADD COLUMN IF NOT EXISTS note TEXT`);
+    for (const col of PROFILE_MIGRATIONS) {
+      await sql.unsafe(`ALTER TABLE profiles ADD COLUMN IF NOT EXISTS ${col} TEXT`);
+    }
   })();
 
   async function introCardsFor(memberEmail: string): Promise<IntroCard[]> {
     const rows = await sql`
       SELECT p.email AS "candidateEmail", p.name, p.age, p.profession, p.neighborhood,
-             p.prompt1, p.prompt2, p.photo1, p.photo2, i.note,
+             p.prompt1, p.prompt2, p.photo1, p.photo2, p.photos,
+             p.interests, p.vibe, p.loves, p.dealbreaker, i.note,
              EXISTS(SELECT 1 FROM picks k WHERE k.member_email=${memberEmail} AND k.candidate_email=p.email) AS picked,
              (EXISTS(SELECT 1 FROM picks k WHERE k.member_email=${memberEmail} AND k.candidate_email=p.email)
               AND EXISTS(SELECT 1 FROM picks k2 WHERE k2.member_email=p.email AND k2.candidate_email=${memberEmail})) AS mutual
@@ -125,7 +161,9 @@ function pgStore(url: string): ClubStore {
       WHERE i.member_email = ${memberEmail}
       ORDER BY i.created_at DESC LIMIT 9
     `;
-    return rows as unknown as IntroCard[];
+    return (rows as unknown as Array<Record<string, unknown>>).map(
+      (r) => ({ ...(r as object), gallery: galleryOf(r), picked: !!r.picked, mutual: !!r.mutual }) as IntroCard
+    );
   }
 
   return {
@@ -137,16 +175,19 @@ function pgStore(url: string): ClubStore {
           seeking=${p.seeking}, city=${p.city}, neighborhood=${p.neighborhood},
           profession=${p.profession}, instagram=${p.instagram}, prompt1=${p.prompt1},
           prompt2=${p.prompt2}, availability=${p.availability},
-          photo1=COALESCE(${p.photo1}, photo1), photo2=COALESCE(${p.photo2}, photo2)
+          photo1=COALESCE(${p.photo1}, photo1), photo2=COALESCE(${p.photo2}, photo2),
+          photos=COALESCE(${p.photos}, photos), interests=COALESCE(${p.interests}, interests),
+          vibe=COALESCE(${p.vibe}, vibe), loves=COALESCE(${p.loves}, loves),
+          dealbreaker=COALESCE(${p.dealbreaker}, dealbreaker)
           WHERE email=${p.email}`;
         return { token: existing[0].token as string, existing: true };
       }
       const token = newToken();
       await sql`INSERT INTO profiles (id,email,token,name,age,gender,seeking,city,neighborhood,
-        profession,instagram,prompt1,prompt2,availability,photo1,photo2,status,created_at)
+        profession,instagram,prompt1,prompt2,availability,photo1,photo2,photos,interests,vibe,loves,dealbreaker,status,created_at)
         VALUES (${newId("pr")},${p.email},${token},${p.name},${p.age},${p.gender},${p.seeking},
         ${p.city},${p.neighborhood},${p.profession},${p.instagram},${p.prompt1},${p.prompt2},
-        ${p.availability},${p.photo1},${p.photo2},'applied',${new Date().toISOString()})`;
+        ${p.availability},${p.photo1},${p.photo2},${p.photos},${p.interests},${p.vibe},${p.loves},${p.dealbreaker},'applied',${new Date().toISOString()})`;
       return { token, existing: false };
     },
     async getProfileByToken(token) {
@@ -205,20 +246,23 @@ function liteStore(url: string): ClubStore {
   const db = new DatabaseSync(url.replace(/^file:/, ""));
   for (const d of DDL) db.exec(d);
   try { db.exec(`ALTER TABLE intros ADD COLUMN note TEXT`); } catch { /* column exists */ }
+  for (const col of PROFILE_MIGRATIONS) {
+    try { db.exec(`ALTER TABLE profiles ADD COLUMN ${col} TEXT`); } catch { /* column exists */ }
+  }
   const cols = PROFILE_COLS.replace(/"/g, "");
 
   return {
     async createProfile(p) {
       const ex = db.prepare(`SELECT token FROM profiles WHERE email=?`).get(p.email) as { token: string } | undefined;
       if (ex) {
-        db.prepare(`UPDATE profiles SET name=?,age=?,gender=?,seeking=?,city=?,neighborhood=?,profession=?,instagram=?,prompt1=?,prompt2=?,availability=?,photo1=COALESCE(?,photo1),photo2=COALESCE(?,photo2) WHERE email=?`)
-          .run(p.name, p.age, p.gender, p.seeking, p.city, p.neighborhood, p.profession, p.instagram, p.prompt1, p.prompt2, p.availability, p.photo1, p.photo2, p.email);
+        db.prepare(`UPDATE profiles SET name=?,age=?,gender=?,seeking=?,city=?,neighborhood=?,profession=?,instagram=?,prompt1=?,prompt2=?,availability=?,photo1=COALESCE(?,photo1),photo2=COALESCE(?,photo2),photos=COALESCE(?,photos),interests=COALESCE(?,interests),vibe=COALESCE(?,vibe),loves=COALESCE(?,loves),dealbreaker=COALESCE(?,dealbreaker) WHERE email=?`)
+          .run(p.name, p.age, p.gender, p.seeking, p.city, p.neighborhood, p.profession, p.instagram, p.prompt1, p.prompt2, p.availability, p.photo1, p.photo2, p.photos, p.interests, p.vibe, p.loves, p.dealbreaker, p.email);
         return { token: ex.token, existing: true };
       }
       const token = newToken();
-      db.prepare(`INSERT INTO profiles (id,email,token,name,age,gender,seeking,city,neighborhood,profession,instagram,prompt1,prompt2,availability,photo1,photo2,status,created_at)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'applied',?)`)
-        .run(newId("pr"), p.email, token, p.name, p.age, p.gender, p.seeking, p.city, p.neighborhood, p.profession, p.instagram, p.prompt1, p.prompt2, p.availability, p.photo1, p.photo2, new Date().toISOString());
+      db.prepare(`INSERT INTO profiles (id,email,token,name,age,gender,seeking,city,neighborhood,profession,instagram,prompt1,prompt2,availability,photo1,photo2,photos,interests,vibe,loves,dealbreaker,status,created_at)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'applied',?)`)
+        .run(newId("pr"), p.email, token, p.name, p.age, p.gender, p.seeking, p.city, p.neighborhood, p.profession, p.instagram, p.prompt1, p.prompt2, p.availability, p.photo1, p.photo2, p.photos, p.interests, p.vibe, p.loves, p.dealbreaker, new Date().toISOString());
       return { token, existing: false };
     },
     async getProfileByToken(token) {
@@ -242,14 +286,15 @@ function liteStore(url: string): ClubStore {
     async getIntrosFor(memberEmail) {
       const rows = db.prepare(`
         SELECT p.email AS candidateEmail, p.name, p.age, p.profession, p.neighborhood,
-               p.prompt1, p.prompt2, p.photo1, p.photo2, i.note,
+               p.prompt1, p.prompt2, p.photo1, p.photo2, p.photos,
+               p.interests, p.vibe, p.loves, p.dealbreaker, i.note,
                EXISTS(SELECT 1 FROM picks k WHERE k.member_email=? AND k.candidate_email=p.email) AS picked,
                (EXISTS(SELECT 1 FROM picks k WHERE k.member_email=? AND k.candidate_email=p.email)
                 AND EXISTS(SELECT 1 FROM picks k2 WHERE k2.member_email=p.email AND k2.candidate_email=?)) AS mutual
         FROM intros i JOIN profiles p ON p.email = i.candidate_email
         WHERE i.member_email = ? ORDER BY i.created_at DESC LIMIT 9`)
         .all(memberEmail, memberEmail, memberEmail, memberEmail) as unknown as Array<Record<string, unknown>>;
-      return rows.map(r => ({ ...(r as object), picked: !!r.picked, mutual: !!r.mutual }) as IntroCard);
+      return rows.map(r => ({ ...(r as object), gallery: galleryOf(r), picked: !!r.picked, mutual: !!r.mutual }) as IntroCard);
     },
     async recordPick(memberEmail, candidateEmail) {
       db.prepare(`INSERT OR IGNORE INTO picks (id,member_email,candidate_email,created_at) VALUES (?,?,?,?)`)

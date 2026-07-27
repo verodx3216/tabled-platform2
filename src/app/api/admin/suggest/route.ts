@@ -38,7 +38,11 @@ function profileLine(p: Profile): string {
     `name: ${p.name}, ${p.age}, ${p.gender}, seeking ${p.seeking}`,
     `city: ${p.city}${p.neighborhood ? " / " + p.neighborhood : ""}`,
     p.profession ? `profession: ${p.profession}` : null,
+    p.vibe ? `energy: ${p.vibe}` : null,
+    p.interests ? `into: ${p.interests}` : null,
     p.prompt1 ? `ideal Friday: ${p.prompt1}` : null,
+    p.loves ? `loves: ${p.loves}` : null,
+    p.dealbreaker ? `can't stand: ${p.dealbreaker}` : null,
     p.prompt2 ? `looking for: ${p.prompt2}` : null,
     p.availability ? `available: ${p.availability}` : null,
   ]

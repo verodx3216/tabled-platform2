@@ -18,8 +18,8 @@ export default function Home() {
             <Link href="/dinners" className="hover:text-white">The First Table</Link>
             <Link href="/cities" className="hover:text-white">The Race</Link>
             <Link
-              href="#waitlist"
-              className="rounded-full border border-cream/40 px-4 py-1.5 hover:border-white hover:text-white"
+              href="/apply"
+              className="rounded-full bg-berry px-4 py-1.5 font-semibold text-white hover:opacity-90"
             >
               Join
             </Link>
