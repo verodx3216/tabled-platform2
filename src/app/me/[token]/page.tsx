@@ -71,6 +71,11 @@ export default async function MemberPage({ params }: { params: { token: string }
                     </p>
                     {c.prompt1 && <p className="mt-3 text-sm text-ink/85"><b className="text-rose">Ideal Friday:</b> {c.prompt1}</p>}
                     {c.prompt2 && <p className="mt-1.5 text-sm text-ink/85"><b className="text-rose">Looking for:</b> {c.prompt2}</p>}
+                    {c.note && (
+                      <p className="mt-3 rounded-2xl bg-cream px-4 py-3 text-sm italic text-berryDark">
+                        <b className="not-italic text-rose">From your matchmaker:</b> {c.note}
+                      </p>
+                    )}
                     <PickButton token={params.token} candidateEmail={c.candidateEmail} picked={c.picked} mutual={c.mutual} />
                   </div>
                 </div>

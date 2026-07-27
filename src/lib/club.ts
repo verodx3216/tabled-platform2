@@ -38,13 +38,13 @@ export type NewProfile = Omit<Profile, "id" | "token" | "status" | "createdAt">;
 export type IntroCard = Pick<
   Profile,
   "name" | "age" | "profession" | "neighborhood" | "prompt1" | "prompt2" | "photo1" | "photo2"
-> & { candidateEmail: string; picked: boolean; mutual: boolean };
+> & { candidateEmail: string; picked: boolean; mutual: boolean; note: string | null };
 
 export interface ClubStore {
   createProfile(p: NewProfile): Promise<{ token: string; existing: boolean }>;
   getProfileByToken(token: string): Promise<Profile | null>;
   listProfiles(): Promise<Profile[]>;
-  assignIntros(memberEmail: string, candidateEmails: string[], week: string): Promise<void>;
+  assignIntros(memberEmail: string, candidateEmails: string[], week: string, notes?: Record<string, string>): Promise<void>;
   getIntrosFor(memberEmail: string): Promise<IntroCard[]>;
   recordPick(memberEmail: string, candidateEmail: string): Promise<{ mutual: boolean }>;
   listMutuals(): Promise<Array<{ a: string; b: string }>>;
@@ -77,6 +77,7 @@ const DDL = [
     member_email TEXT NOT NULL,
     candidate_email TEXT NOT NULL,
     week TEXT NOT NULL,
+    note TEXT,
     created_at TEXT NOT NULL,
     UNIQUE(member_email, candidate_email, week)
   )`,
@@ -107,12 +108,16 @@ const PROFILE_COLS = `id, email, token, name, age, gender, seeking, city, neighb
 function pgStore(url: string): ClubStore {
   const postgres = require("postgres") as typeof import("postgres");
   const sql = postgres(url, { max: 1 });
-  const ready = (async () => { for (const d of DDL) await sql.unsafe(d); })();
+  const ready = (async () => {
+    for (const d of DDL) await sql.unsafe(d);
+    // migration for tables created before matchmaker notes existed
+    await sql.unsafe(`ALTER TABLE intros ADD COLUMN IF NOT EXISTS note TEXT`);
+  })();
 
   async function introCardsFor(memberEmail: string): Promise<IntroCard[]> {
     const rows = await sql`
       SELECT p.email AS "candidateEmail", p.name, p.age, p.profession, p.neighborhood,
-             p.prompt1, p.prompt2, p.photo1, p.photo2,
+             p.prompt1, p.prompt2, p.photo1, p.photo2, i.note,
              EXISTS(SELECT 1 FROM picks k WHERE k.member_email=${memberEmail} AND k.candidate_email=p.email) AS picked,
              (EXISTS(SELECT 1 FROM picks k WHERE k.member_email=${memberEmail} AND k.candidate_email=p.email)
               AND EXISTS(SELECT 1 FROM picks k2 WHERE k2.member_email=p.email AND k2.candidate_email=${memberEmail})) AS mutual
@@ -154,16 +159,18 @@ function pgStore(url: string): ClubStore {
       const r = await sql.unsafe(`SELECT ${PROFILE_COLS} FROM profiles ORDER BY created_at DESC`);
       return r as unknown as Profile[];
     },
-    async assignIntros(memberEmail, candidates, week) {
+    async assignIntros(memberEmail, candidates, week, notes) {
       await ready;
       await sql`DELETE FROM intros WHERE member_email=${memberEmail} AND week=${week}`;
       for (const c of candidates) {
-        // forward + reciprocal: both sides see each other, so mutuals can happen
-        await sql`INSERT INTO intros (id,member_email,candidate_email,week,created_at)
-          VALUES (${newId("in")},${memberEmail},${c},${week},${new Date().toISOString()})
+        const note = notes?.[c] ?? null;
+        // forward + reciprocal: both sides see each other, so mutuals can happen;
+        // the matchmaker note is written to the pair, so both rows carry it
+        await sql`INSERT INTO intros (id,member_email,candidate_email,week,note,created_at)
+          VALUES (${newId("in")},${memberEmail},${c},${week},${note},${new Date().toISOString()})
           ON CONFLICT (member_email,candidate_email,week) DO NOTHING`;
-        await sql`INSERT INTO intros (id,member_email,candidate_email,week,created_at)
-          VALUES (${newId("in")},${c},${memberEmail},${week},${new Date().toISOString()})
+        await sql`INSERT INTO intros (id,member_email,candidate_email,week,note,created_at)
+          VALUES (${newId("in")},${c},${memberEmail},${week},${note},${new Date().toISOString()})
           ON CONFLICT (member_email,candidate_email,week) DO NOTHING`;
       }
     },
@@ -197,6 +204,7 @@ function liteStore(url: string): ClubStore {
   const { DatabaseSync } = require("node:sqlite");
   const db = new DatabaseSync(url.replace(/^file:/, ""));
   for (const d of DDL) db.exec(d);
+  try { db.exec(`ALTER TABLE intros ADD COLUMN note TEXT`); } catch { /* column exists */ }
   const cols = PROFILE_COLS.replace(/"/g, "");
 
   return {
@@ -219,20 +227,22 @@ function liteStore(url: string): ClubStore {
     async listProfiles() {
       return db.prepare(`SELECT ${cols} FROM profiles ORDER BY created_at DESC`).all() as unknown as Profile[];
     },
-    async assignIntros(memberEmail, candidates, week) {
+    async assignIntros(memberEmail, candidates, week, notes) {
       db.prepare(`DELETE FROM intros WHERE member_email=? AND week=?`).run(memberEmail, week);
       for (const c of candidates) {
-        // forward + reciprocal: both sides see each other, so mutuals can happen
-        db.prepare(`INSERT OR IGNORE INTO intros (id,member_email,candidate_email,week,created_at) VALUES (?,?,?,?,?)`)
-          .run(newId("in"), memberEmail, c, week, new Date().toISOString());
-        db.prepare(`INSERT OR IGNORE INTO intros (id,member_email,candidate_email,week,created_at) VALUES (?,?,?,?,?)`)
-          .run(newId("in"), c, memberEmail, week, new Date().toISOString());
+        const note = notes?.[c] ?? null;
+        // forward + reciprocal: both sides see each other, so mutuals can happen;
+        // the matchmaker note is written to the pair, so both rows carry it
+        db.prepare(`INSERT OR IGNORE INTO intros (id,member_email,candidate_email,week,note,created_at) VALUES (?,?,?,?,?,?)`)
+          .run(newId("in"), memberEmail, c, week, note, new Date().toISOString());
+        db.prepare(`INSERT OR IGNORE INTO intros (id,member_email,candidate_email,week,note,created_at) VALUES (?,?,?,?,?,?)`)
+          .run(newId("in"), c, memberEmail, week, note, new Date().toISOString());
       }
     },
     async getIntrosFor(memberEmail) {
       const rows = db.prepare(`
         SELECT p.email AS candidateEmail, p.name, p.age, p.profession, p.neighborhood,
-               p.prompt1, p.prompt2, p.photo1, p.photo2,
+               p.prompt1, p.prompt2, p.photo1, p.photo2, i.note,
                EXISTS(SELECT 1 FROM picks k WHERE k.member_email=? AND k.candidate_email=p.email) AS picked,
                (EXISTS(SELECT 1 FROM picks k WHERE k.member_email=? AND k.candidate_email=p.email)
                 AND EXISTS(SELECT 1 FROM picks k2 WHERE k2.member_email=p.email AND k2.candidate_email=?)) AS mutual
