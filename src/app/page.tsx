@@ -12,14 +12,15 @@ export default function Home() {
         <div className="pointer-events-none absolute -bottom-48 -left-24 h-[24rem] w-[24rem] rounded-full bg-berry/50" />
         <nav className="relative mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
           <LogoLockup light />
-          <div className="flex items-center gap-6 text-sm text-cream/90">
-            <Link href="#how" className="hover:text-white">How it works</Link>
-            <Link href="#membership" className="hover:text-white">Membership</Link>
-            <Link href="/dinners" className="hover:text-white">The First Table</Link>
-            <Link href="/cities" className="hover:text-white">The Race</Link>
+          <div className="flex items-center gap-4 text-sm text-cream/90 md:gap-6">
+            {/* text links collapse on phones — the header stays logo + Join */}
+            <Link href="#how" className="hidden whitespace-nowrap hover:text-white md:inline">How it works</Link>
+            <Link href="#membership" className="hidden whitespace-nowrap hover:text-white md:inline">Membership</Link>
+            <Link href="/dinners" className="hidden whitespace-nowrap hover:text-white md:inline">The First Table</Link>
+            <Link href="/cities" className="hidden whitespace-nowrap hover:text-white md:inline">The Race</Link>
             <Link
               href="/apply"
-              className="rounded-full bg-berry px-4 py-1.5 font-semibold text-white hover:opacity-90"
+              className="whitespace-nowrap rounded-full bg-berry px-5 py-2 font-semibold text-white hover:opacity-90"
             >
               Join
             </Link>
