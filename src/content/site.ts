@@ -7,7 +7,7 @@
 export const site = {
   name: "Tabled",
   tagline: "Your membership never disappears. It becomes dates.",
-  sub: "The stored-value dating club. Real first dates at Dubai\u2019s best tables \u2014 matched by AI, funded by your membership, zero swiping.",
+  sub: "Real first dates at Dubai\u2019s best tables \u2014 matched by AI, funded by your membership, zero swiping.",
   waitlistCta: "Join the founding waitlist",
   cities: ["Dubai", "Miami (2027)", "New York (2027)"],
 };

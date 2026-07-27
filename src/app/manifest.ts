@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Tabled — the stored-value dating club",
+    name: "Tabled",
     short_name: "Tabled",
     description: "Real first dates at great tables. Zero swiping.",
     start_url: "/",

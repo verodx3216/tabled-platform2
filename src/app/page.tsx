@@ -26,7 +26,7 @@ export default function Home() {
         </nav>
         <div className="relative mx-auto max-w-6xl px-6 pb-24 pt-16 md:pt-24">
           <p className="text-sm font-semibold uppercase tracking-[0.3em] text-rose">
-            The stored-value dating club · Dubai
+            A members&apos; dining club · Dubai
           </p>
           <h1 className="mt-5 max-w-3xl font-serif text-5xl font-bold leading-tight md:text-6xl">
             Your membership never disappears.{" "}

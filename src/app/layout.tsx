@@ -5,11 +5,11 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://tabled.club"),
   title: "Tabled — Your membership never disappears. It becomes dates.",
   description:
-    "The stored-value dating club. ID-verified members, curated introductions, real tables at Dubai's best venues — and a membership fee that converts into Date Credits you keep.",
+    "ID-verified members, curated introductions, real tables at Dubai's best venues — and a membership fee that converts into Date Credits you keep.",
   openGraph: {
     url: "https://tabled.club",
     siteName: "Tabled",
-    title: "Tabled — the stored-value dating club",
+    title: "Tabled",
     description:
       "Curated introductions. Real tables. A membership fee that becomes your dates. Launching in Dubai.",
     type: "website",
